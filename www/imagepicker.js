@@ -23,16 +23,14 @@ var ImagePicker = function () {
 ImagePicker.prototype.getPictures = function (success, fail, options) {
   options = options || {}
 
-  var params = {
-    multipleSelection: options.multipleSelection || true,
-    maximumImagesCount: options.maximumImagesCount ? options.maximumImagesCount : 5,
-    mediaType: options.mediaType || 'any',
-    width: options.width ? options.width : 0,
-    height: options.height ? options.height : 0,
-    quality: options.quality ? options.quality : 100
-  }
+  options.minImages = options.minImages || 0
+  options.maxImages = options.maxImages || 5
+  options.mediaType = options.mediaType || 'any'
+  options.width = options.width || 0
+  options.height = options.height || 0
+  options.quality = options.quality || 100
 
-  return cordova.exec(success, fail, 'ImagePicker', 'getPictures', [params])
+  return cordova.exec(success, fail, 'ImagePicker', 'getPictures', [options])
 }
 
 module.exports = new ImagePicker()

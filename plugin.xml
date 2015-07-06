@@ -25,12 +25,12 @@
   <platform name="ios">
     <config-file target="config.xml" parent="/*">
       <feature name="ImagePicker">
-        <param name="ios-package" value="SOSPicker"/>
+        <param name="ios-package" value="CTPicker"/>
       </feature>
     </config-file>
 
-    <header-file src="src/ios/SOSPicker.h" />
-    <source-file src="src/ios/SOSPicker.m" />
+    <header-file src="src/ios/CTPicker.h" />
+    <source-file src="src/ios/CTPicker.m" />
     <framework src="src/ios/QBImagePicker.framework" custom="true" />
   </platform>
 

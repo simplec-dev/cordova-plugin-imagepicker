@@ -1,15 +1,14 @@
 //
-//  SOSPicker.h
-//  SyncOnSet
+//  CTPicker.h
 //
 //  Created by Christopher Sullivan on 10/25/13.
-//
+//  Updated by Jeduan Cornejo on 07/06/15
 //
 
 #import <Cordova/CDVPlugin.h>
 #import <QBImagePicker/QBImagePicker.h>
 
-@interface SOSPicker : CDVPlugin <ELCImagePickerControllerDelegate, UINavigationControllerDelegate, UIScrollViewDelegate>
+@interface CTPicker : CDVPlugin <QBImagePickerControllerDelegate>
 
 @property (copy)   NSString* callbackId;
 
