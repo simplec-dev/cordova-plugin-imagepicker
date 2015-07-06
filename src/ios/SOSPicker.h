@@ -7,8 +7,7 @@
 //
 
 #import <Cordova/CDVPlugin.h>
-#import "ELCAlbumPickerController.h"
-#import "ELCImagePickerController.h"
+#import <QBImagePicker/QBImagePicker.h>
 
 @interface SOSPicker : CDVPlugin <ELCImagePickerControllerDelegate, UINavigationControllerDelegate, UIScrollViewDelegate>
 
