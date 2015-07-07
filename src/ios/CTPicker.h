@@ -6,14 +6,11 @@
 //
 
 #import <Cordova/CDVPlugin.h>
-#import <QBImagePicker/QBImagePicker.h>
+#import "QBImagePickerController.h"
 
 @interface CTPicker : CDVPlugin <QBImagePickerControllerDelegate>
 
-@property (copy)   NSString* callbackId;
-
 - (void) getPictures:(CDVInvokedUrlCommand *)command;
-- (UIImage*)imageByScalingNotCroppingForSize:(UIImage*)anImage toSize:(CGSize)frameSize;
 
 @property (nonatomic, assign) NSInteger width;
 @property (nonatomic, assign) NSInteger height;

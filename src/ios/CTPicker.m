@@ -9,6 +9,13 @@
 
 #define CDV_PHOTO_PREFIX @"cdv_photo_"
 
+@interface CTPicker ()
+
+- (UIImage*)imageByScalingNotCroppingForSize:(UIImage*)anImage toSize:(CGSize)frameSize;
+@property (copy) NSString* callbackId;
+
+@end
+
 @implementation CTPicker
 
 @synthesize callbackId;
@@ -42,10 +49,24 @@
     imagePicker.delegate = self;
 
 	self.callbackId = command.callbackId;
-	// Present modally
-	[self.viewController presentViewController:imagePicker
-	                       animated:YES
-	                     completion:nil];
+	[self.viewController presentViewController:imagePicker animated:YES completion:NULL];
+}
+
+#pragma mark - QBImagePickerControllerDelegate
+
+- (void)qb_imagePickerController:(QBImagePickerController *)imagePickerController didFinishPickingAssets:(NSArray *)assets
+{
+    NSLog(@"Selected assets:");
+    NSLog(@"%@", assets);
+    
+    [self.viewController dismissViewControllerAnimated:YES completion:NULL];
+}
+
+- (void)qb_imagePickerControllerDidCancel:(QBImagePickerController *)imagePickerController
+{
+    NSLog(@"Canceled.");
+    
+    [self.viewController dismissViewControllerAnimated:YES completion:NULL];
 }
 
 

@@ -31,7 +31,32 @@
 
     <header-file src="src/ios/CTPicker.h" />
     <source-file src="src/ios/CTPicker.m" />
-    <framework src="src/ios/QBImagePicker.framework" custom="true" />
+
+    <header-file src="src/ios/QBImagePicker/QBAlbumCell.h" />
+    <source-file src="src/ios/QBImagePicker/QBAlbumCell.m" />
+    <header-file src="src/ios/QBImagePicker/QBAssetCell.h" />
+    <source-file src="src/ios/QBImagePicker/QBAssetCell.m" />
+    <header-file src="src/ios/QBImagePicker/QBCheckmarkView.h" />
+    <source-file src="src/ios/QBImagePicker/QBCheckmarkView.m" />
+    <header-file src="src/ios/QBImagePicker/QBVideoIconView.h" />
+    <source-file src="src/ios/QBImagePicker/QBVideoIconView.m" />
+    <header-file src="src/ios/QBImagePicker/QBSlomoIconView.h" />
+    <source-file src="src/ios/QBImagePicker/QBSlomoIconView.m" />
+    <header-file src="src/ios/QBImagePicker/QBVideoIndicatorView.h" />
+    <source-file src="src/ios/QBImagePicker/QBVideoIndicatorView.m" />
+
+    <header-file src="src/ios/QBImagePicker/QBImagePickerController.h" />
+    <source-file src="src/ios/QBImagePicker/QBImagePickerController.m" />
+    <header-file src="src/ios/QBImagePicker/QBAlbumsViewController.h" />
+    <source-file src="src/ios/QBImagePicker/QBAlbumsViewController.m" />
+    <header-file src="src/ios/QBImagePicker/QBAssetsViewController.h" />
+    <source-file src="src/ios/QBImagePicker/QBAssetsViewController.m" />
+
+    <resource-file src="src/ios/QBImagePicker/Base.lproj/QBImagePicker.strings" />
+    <resource-file src="src/ios/QBImagePicker/QBImagePicker.storyboard" />
+    
+    <framework src="QuartzCore.framework" />
+    <framework src="Photos.framework" />
   </platform>
 
   <!-- android -->
