@@ -54,9 +54,10 @@
 
     <resource-file src="src/ios/QBImagePicker/Base.lproj/QBImagePicker.strings" />
     <resource-file src="src/ios/QBImagePicker/QBImagePicker.storyboard" />
-    
+
     <framework src="QuartzCore.framework" />
     <framework src="Photos.framework" />
+    <framework src="ImageIO.framework" />
   </platform>
 
   <!-- android -->

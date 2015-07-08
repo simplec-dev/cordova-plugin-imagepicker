@@ -6,6 +6,8 @@
 //
 
 #import "CTPicker.h"
+#import <ImageIO/ImageIO.h>
+#import <MobileCoreServices/MobileCoreServices.h>
 
 #define CDV_PHOTO_PREFIX @"cdv_photo_"
 
@@ -28,29 +30,27 @@
         self.height = [options[@"height"] integerValue] ?: 0;
         self.quality = [options[@"quality"] integerValue] ?: 100;
         NSString *mediaType = (NSString *)options[@"mediaType"];
-        
+
         // Create the an album controller and image picker
         QBImagePickerController *imagePicker = [[QBImagePickerController alloc] init];
-        
+
         imagePicker.allowsMultipleSelection = (maxImages >= 2);
         imagePicker.showsNumberOfSelectedAssets = YES;
         imagePicker.maximumNumberOfSelection = maxImages;
         imagePicker.minimumNumberOfSelection = minImages;
 
-        NSMutableArray *collections = [imagePicker.assetCollectionSubtypes mutableCopy];
-        
         if ([mediaType isEqualToString:@"image"]) {
             imagePicker.mediaType = QBImagePickerMediaTypeImage;
+            NSMutableArray *collections = [imagePicker.assetCollectionSubtypes mutableCopy];
             [collections removeObject:@(PHAssetCollectionSubtypeSmartAlbumVideos)];
+            imagePicker.assetCollectionSubtypes = [collections copy];
         } else if ([mediaType isEqualToString:@"video"]) {
             imagePicker.mediaType = QBImagePickerMediaTypeVideo;
         } else {
             imagePicker.mediaType = QBImagePickerMediaTypeAny;
         }
-        imagePicker.assetCollectionSubtypes = [collections copy];
-        
+
         imagePicker.delegate = self;
-        
         self.callbackId = command.callbackId;
         [self.viewController presentViewController:imagePicker animated:YES completion:NULL];
     }];
@@ -62,49 +62,54 @@
 {
     NSLog(@"Selected assets:");
     NSLog(@"%@", assets);
-    NSString *docsPath = [NSTemporaryDirectory()stringByStandardizingPath];
-    NSFileManager *fileManager = [[NSFileManager alloc] init];
     PHImageManager *manager = [PHImageManager defaultManager];
     PHImageRequestOptions *options = [[PHImageRequestOptions alloc] init];
     options.synchronous = YES;
-    NSString *filePath;
 
     __block NSMutableArray *resultStrings = [[NSMutableArray alloc] init];
-    
+
     for (PHAsset *asset in assets) {
-        int i = 1;
-        do {
-            filePath = [NSString stringWithFormat:@"%@/%@%03d.%@", docsPath, CDV_PHOTO_PREFIX, i++, @"jpg"];
-        } while ([fileManager fileExistsAtPath:filePath]);
-        
+        NSString *filePath = [self tempFilePath:@"jpg"];
+        NSURL *fileURL = [NSURL fileURLWithPath:filePath isDirectory:NO];
+
         CGSize targetSize;
         if (self.width == 0 && self.height == 0) {
             targetSize = PHImageManagerMaximumSize;
         } else {
             targetSize = CGSizeMake(self.width, self.height);
         }
-        
-        [manager requestImageForAsset:asset
-                           targetSize:targetSize
-                          contentMode:PHImageContentModeAspectFill
-                              options:options
-                        resultHandler:^(UIImage *image, NSDictionary *info) {
-                            
-            NSError *err;
-            NSData *data = UIImageJPEGRepresentation(image, self.quality/100.0f);
-            if (![data writeToFile:filePath options:NSAtomicWrite error:&err]) {
-                CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_IO_EXCEPTION messageAsString:[err localizedDescription]];
-                [self didFinishImagesWithResult:pluginResult];
-            } else {
-                [resultStrings addObject:[[NSURL fileURLWithPath:filePath] absoluteString]];
+
+        void (^handler)(UIImage *image, NSDictionary *info) = ^void(UIImage *image, NSDictionary *info) {
+            UIImage *rotatedImage = [self imageByRotatingImage:image];
+
+            NSDictionary *options = @{
+                                      (__bridge id)kCGImageDestinationLossyCompressionQuality: @(self.quality / 100),
+                                      (__bridge id)kCGImageMetadataShouldExcludeGPS: @(YES),
+                                      };
+            CGImageDestinationRef imageDestinationRef =
+            CGImageDestinationCreateWithURL((__bridge CFURLRef)fileURL,
+                                            kUTTypeJPEG,
+                                            1,
+                                            NULL);
+
+            CGImageDestinationAddImage(imageDestinationRef, rotatedImage.CGImage, (__bridge CFDictionaryRef)options);
+            if (CGImageDestinationFinalize(imageDestinationRef)) {
+                [resultStrings addObject:[fileURL absoluteString]];
                 if ([resultStrings count] == [assets count]) {
                     CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:resultStrings];
                     [self didFinishImagesWithResult:pluginResult];
                 }
             }
-        }];
+            CFRelease(imageDestinationRef);
+        };
+
+        [manager requestImageForAsset:asset
+                           targetSize:targetSize
+                          contentMode:PHImageContentModeAspectFill
+                              options:options
+                        resultHandler:handler];
     }
-    
+
     [self.viewController dismissViewControllerAnimated:YES completion:NULL];
 }
 
@@ -120,6 +125,117 @@
     [self.commandDelegate sendPluginResult:pluginResult callbackId:self.callbackId];
     self.callbackId = nil;
     [self.viewController dismissViewControllerAnimated:YES completion:NULL];
+}
+
+- (NSString*)tempFilePath:(NSString*)extension
+{
+    NSString* docsPath = [NSTemporaryDirectory()stringByStandardizingPath];
+    NSFileManager* fileMgr = [[NSFileManager alloc] init]; // recommended by Apple (vs [NSFileManager defaultManager]) to be threadsafe
+    NSString* filePath;
+
+    // generate unique file name
+    int i = 1;
+    do {
+        filePath = [NSString stringWithFormat:@"%@/%@%03d.%@", docsPath, CDV_PHOTO_PREFIX, i++, extension];
+    } while ([fileMgr fileExistsAtPath:filePath]);
+
+    return filePath;
+}
+
+- (UIImage *)imageByRotatingImage:(UIImage *)image
+{
+    NSLog(@"Original Image Size %lu x %lu, orientation %ld", CGImageGetWidth(image.CGImage), CGImageGetHeight(image.CGImage), (long)image.imageOrientation);
+
+    CGImageRef imageRef = image.CGImage;
+
+    CGSize origImageSize = CGSizeMake(CGImageGetWidth(imageRef), CGImageGetHeight(imageRef));
+    CGFloat bitmapWidth = CGImageGetWidth(imageRef);
+    CGFloat bitmapHeight = CGImageGetHeight(imageRef);
+
+    CGFloat tmpSwap = 0;
+    switch (image.imageOrientation) {
+        case UIImageOrientationLeft:
+        case UIImageOrientationLeftMirrored:
+        case UIImageOrientationRight:
+        case UIImageOrientationRightMirrored:
+            tmpSwap = bitmapWidth;
+            bitmapWidth = bitmapHeight;
+            bitmapHeight = tmpSwap;
+            break;
+
+        default:
+            break;
+    }
+
+    CGColorSpaceRef colorSpaceRef = CGColorSpaceCreateDeviceRGB();
+    CGContextRef bitmapRef = CGBitmapContextCreate(NULL,
+                                                   bitmapWidth,
+                                                   bitmapHeight,
+                                                   8,
+                                                   0,
+                                                   colorSpaceRef,
+                                                   kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
+    CGContextSetRGBFillColor (bitmapRef, 0, 0, 0, 1);// 3
+    CGContextFillRect (bitmapRef, CGRectMake (0, 0, bitmapWidth, bitmapHeight ));// 4
+    CGColorSpaceRelease(colorSpaceRef);
+
+    CGAffineTransform transform = CGAffineTransformIdentity;
+    switch (image.imageOrientation)
+    {
+        case UIImageOrientationDown:           // EXIF = 3
+        case UIImageOrientationDownMirrored:   // EXIF = 4
+            transform = CGAffineTransformTranslate(transform, bitmapWidth, bitmapHeight);
+            transform = CGAffineTransformRotate(transform, M_PI);
+            break;
+
+        case UIImageOrientationLeft:           // EXIF = 6
+        case UIImageOrientationLeftMirrored:   // EXIF = 5
+            transform = CGAffineTransformTranslate(transform, bitmapWidth, 0);
+            transform = CGAffineTransformRotate(transform, M_PI_2);
+            break;
+
+        case UIImageOrientationRight:          // EXIF = 8
+        case UIImageOrientationRightMirrored:  // EXIF = 7
+            transform = CGAffineTransformTranslate(transform, 0, bitmapHeight);
+            transform = CGAffineTransformRotate(transform, -M_PI_2);
+            break;
+        default:
+            break;
+    }
+
+    switch (image.imageOrientation) {
+        case UIImageOrientationUpMirrored:     // EXIF = 2
+        case UIImageOrientationDownMirrored:   // EXIF = 4
+            transform = CGAffineTransformTranslate(transform, bitmapWidth, 0);
+            transform = CGAffineTransformScale(transform, -1, 1);
+            break;
+
+        case UIImageOrientationLeftMirrored:   // EXIF = 5
+        case UIImageOrientationRightMirrored:  // EXIF = 7
+            transform = CGAffineTransformTranslate(transform, bitmapHeight, 0);
+            transform = CGAffineTransformScale(transform, -1, 1);
+            break;
+        default:
+            break;
+    }
+
+    CGContextConcatCTM(bitmapRef, transform);
+
+    // Draw into the context; this scales the image
+    CGContextDrawImage(bitmapRef, CGRectMake(0, 0, origImageSize.width, origImageSize.height), imageRef);
+
+    // Get the resized image from the context and a UIImage
+    CGImageRef newImageRef = CGBitmapContextCreateImage(bitmapRef);
+    UIImage *newImage = [UIImage imageWithCGImage:newImageRef];
+
+    // Clean up
+    CGContextRelease(bitmapRef);
+    CGImageRelease(newImageRef);
+
+    NSLog(@"Oriented Image Size %lu x %lu, orientation %ld", CGImageGetWidth(newImage.CGImage), CGImageGetHeight(newImage.CGImage), (long)newImage.imageOrientation);
+
+    return newImage;
+
 }
 
 @end
