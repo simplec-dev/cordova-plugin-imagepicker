@@ -11,7 +11,6 @@
 
 @interface CTPicker ()
 
-- (UIImage*)imageByScalingNotCroppingForSize:(UIImage*)anImage toSize:(CGSize)frameSize;
 @property (copy) NSString* callbackId;
 
 @end
@@ -22,34 +21,39 @@
 
 - (void) getPictures:(CDVInvokedUrlCommand *)command {
 	NSDictionary *options = [command.arguments objectAtIndex: 0];
+    [self.commandDelegate runInBackground:^{
+        NSInteger maxImages = [options[@"maxImages"] integerValue];
+        NSInteger minImages = [options[@"minImages"] integerValue];
+        self.width = [options[@"width"] integerValue] ?: 0;
+        self.height = [options[@"height"] integerValue] ?: 0;
+        self.quality = [options[@"quality"] integerValue] ?: 100;
+        NSString *mediaType = (NSString *)options[@"mediaType"];
+        
+        // Create the an album controller and image picker
+        QBImagePickerController *imagePicker = [[QBImagePickerController alloc] init];
+        
+        imagePicker.allowsMultipleSelection = (maxImages >= 2);
+        imagePicker.showsNumberOfSelectedAssets = YES;
+        imagePicker.maximumNumberOfSelection = maxImages;
+        imagePicker.minimumNumberOfSelection = minImages;
 
-    NSInteger maxImages = [options[@"maxImages"] integerValue];
-    NSInteger minImages = [options[@"minImages"] integerValue];
-    self.width = [options[@"width"] integerValue] ?: 0;
-	self.height = [options[@"height"] integerValue] ?: 0;
-	self.quality = [options[@"quality"] integerValue] ?: 100;
-    NSString *mediaType = (NSString *)options[@"mediaType"];
-
-	// Create the an album controller and image picker
-    QBImagePickerController *imagePicker = [[QBImagePickerController alloc] init];
-
-    imagePicker.allowsMultipleSelection = (maxImages >= 2);
-    imagePicker.showsNumberOfSelectedAssets = YES;
-    imagePicker.maximumNumberOfSelection = maxImages;
-    imagePicker.minimumNumberOfSelection = minImages;
-
-    if ([mediaType isEqualToString:@"image"]) {
-        imagePicker.mediaType = QBImagePickerMediaTypeImage;
-    } else if ([mediaType isEqualToString:@"video"]) {
-        imagePicker.mediaType = QBImagePickerMediaTypeVideo;
-    } else {
-        imagePicker.mediaType = QBImagePickerMediaTypeAny;
-    }
-
-    imagePicker.delegate = self;
-
-	self.callbackId = command.callbackId;
-	[self.viewController presentViewController:imagePicker animated:YES completion:NULL];
+        NSMutableArray *collections = [imagePicker.assetCollectionSubtypes mutableCopy];
+        
+        if ([mediaType isEqualToString:@"image"]) {
+            imagePicker.mediaType = QBImagePickerMediaTypeImage;
+            [collections removeObject:@(PHAssetCollectionSubtypeSmartAlbumVideos)];
+        } else if ([mediaType isEqualToString:@"video"]) {
+            imagePicker.mediaType = QBImagePickerMediaTypeVideo;
+        } else {
+            imagePicker.mediaType = QBImagePickerMediaTypeAny;
+        }
+        imagePicker.assetCollectionSubtypes = [collections copy];
+        
+        imagePicker.delegate = self;
+        
+        self.callbackId = command.callbackId;
+        [self.viewController presentViewController:imagePicker animated:YES completion:NULL];
+    }];
 }
 
 #pragma mark - QBImagePickerControllerDelegate
