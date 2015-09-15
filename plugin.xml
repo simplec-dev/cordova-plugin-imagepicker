@@ -52,7 +52,7 @@
     <header-file src="src/ios/QBImagePicker/QBAssetsViewController.h" />
     <source-file src="src/ios/QBImagePicker/QBAssetsViewController.m" />
 
-    <resource-file src="src/ios/QBImagePicker/Base.lproj/QBImagePicker.strings" />
+    <resource-file src="src/ios/QBImagePicker/en.lproj/QBImagePicker.strings" />
     <resource-file src="src/ios/QBImagePicker/QBImagePicker.storyboard" />
 
     <framework src="QuartzCore.framework" />
