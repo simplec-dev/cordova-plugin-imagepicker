@@ -29,26 +29,31 @@
         self.width = [options[@"width"] integerValue] ?: 0;
         self.height = [options[@"height"] integerValue] ?: 0;
         self.quality = [options[@"quality"] integerValue] ?: 100;
+        BOOL sharedAlbums = [options[@"sharedAlbums"] boolValue] ?: false;
         NSString *mediaType = (NSString *)options[@"mediaType"];
 
         // Create the an album controller and image picker
         QBImagePickerController *imagePicker = [[QBImagePickerController alloc] init];
-
         imagePicker.allowsMultipleSelection = (maxImages >= 2);
         imagePicker.showsNumberOfSelectedAssets = YES;
         imagePicker.maximumNumberOfSelection = maxImages;
         imagePicker.minimumNumberOfSelection = minImages;
 
+        NSMutableArray *collections = [imagePicker.assetCollectionSubtypes mutableCopy];
+        if (sharedAlbums) {
+            [collections addObject:@(PHAssetCollectionSubtypeAlbumCloudShared)];
+        }
+
         if ([mediaType isEqualToString:@"image"]) {
             imagePicker.mediaType = QBImagePickerMediaTypeImage;
-            NSMutableArray *collections = [imagePicker.assetCollectionSubtypes mutableCopy];
             [collections removeObject:@(PHAssetCollectionSubtypeSmartAlbumVideos)];
-            imagePicker.assetCollectionSubtypes = [collections copy];
         } else if ([mediaType isEqualToString:@"video"]) {
             imagePicker.mediaType = QBImagePickerMediaTypeVideo;
         } else {
             imagePicker.mediaType = QBImagePickerMediaTypeAny;
         }
+
+        imagePicker.assetCollectionSubtypes = collections;
 
         imagePicker.delegate = self;
         self.callbackId = command.callbackId;
