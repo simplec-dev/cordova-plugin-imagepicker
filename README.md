@@ -16,7 +16,7 @@ The plugin creates the object `window.imagePicker` with the method `getPictures(
 
 Example - Get Full Size Images (all default options):
 ```javascript
-window.imagePicker.getPictures(
+plugins.imagePicker.getPictures(
 	function(results) {
 		for (var i = 0; i < results.length; i++) {
 			console.log('Image URI: ' + results[i]);
@@ -29,7 +29,7 @@ window.imagePicker.getPictures(
 
 Example - Get at most 10 images scaled to width of 800:
 ```javascript
-window.imagePicker.getPictures(
+plugins.imagePicker.getPictures(
 	function(results) {
 		for (var i = 0; i < results.length; i++) {
 			console.log('Image URI: ' + results[i]);
