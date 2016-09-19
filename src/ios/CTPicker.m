@@ -23,7 +23,6 @@
 
 - (void) getPictures:(CDVInvokedUrlCommand *)command {
 	NSDictionary *options = [command.arguments objectAtIndex: 0];
-    [self.commandDelegate runInBackground:^{
         NSInteger maxImages = [options[@"maxImages"] integerValue];
         NSInteger minImages = [options[@"minImages"] integerValue];
         self.width = [options[@"width"] integerValue] ?: 0;
@@ -63,7 +62,6 @@
         dispatch_async(dispatch_get_main_queue(), ^{
                 [weakSelf.viewController presentViewController:imagePicker animated:YES completion:nil];
         });
-    }];
 }
 
 #pragma mark - QBImagePickerControllerDelegate
