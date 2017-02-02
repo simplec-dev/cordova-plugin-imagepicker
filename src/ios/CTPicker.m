@@ -73,6 +73,7 @@
     PHImageManager *manager = [PHImageManager defaultManager];
     PHImageRequestOptions *options = [[PHImageRequestOptions alloc] init];
     options.synchronous = YES;
+    options.networkAccessAllowed = YES;
 
     __block NSMutableArray *resultStrings = [[NSMutableArray alloc] init];
 
@@ -88,7 +89,7 @@
         }
 
         void (^handler)(UIImage *image, NSDictionary *info) = ^void(UIImage *image, NSDictionary *info) {
-            UIImage *rotatedImage = image; /*[self imageByRotatingImage:image];*/
+            UIImage *rotatedImage = [self imageByRotatingImage:image];
 
             NSDictionary *options = @{
                                       (__bridge id)kCGImageDestinationLossyCompressionQuality: @(self.quality / 100),
