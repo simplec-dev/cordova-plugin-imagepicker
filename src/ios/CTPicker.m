@@ -88,7 +88,7 @@
         }
 
         void (^handler)(UIImage *image, NSDictionary *info) = ^void(UIImage *image, NSDictionary *info) {
-            UIImage *rotatedImage = [self imageByRotatingImage:image];
+            UIImage *rotatedImage = image; /*[self imageByRotatingImage:image];*/
 
             NSDictionary *options = @{
                                       (__bridge id)kCGImageDestinationLossyCompressionQuality: @(self.quality / 100),
